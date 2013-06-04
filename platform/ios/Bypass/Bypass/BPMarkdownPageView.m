@@ -18,6 +18,7 @@
 //  limitations under the License.
 //
 
+#import <QuartzCore/QuartzCore.h>
 #import "BPAttributedStringConverter.h"
 #import "BPDocument.h"
 #import "BPMarkdownPageView.h"
@@ -48,6 +49,8 @@ BPContextFlipVertical(CGContextRef context, CGRect rect)
         
         CFRetain(textFrame);
         _textFrame = textFrame;
+      CATiledLayer *layer = self.layer;
+      layer.tileSize = CGSizeMake(frame.size.width, 256);
     }
     
     return self;
@@ -58,17 +61,53 @@ BPContextFlipVertical(CGContextRef context, CGRect rect)
     CFRelease(_textFrame);
 }
 
++ layerClass
+{
+  return [CATiledLayer class];
+}
+
 - (void)drawRect:(CGRect)rect
 {
+  NSLog(@"request %@", NSStringFromCGRect(rect));
+  return;
     CGContextRef context = UIGraphicsGetCurrentContext();
     CGContextSetFillColorWithColor(context, [[self backgroundColor] CGColor]);
     CGContextFillRect(context, rect);
 
-    CGContextSetStrokeColorWithColor(context, [[UIColor blackColor] CGColor]);    
-    CGContextSetTextMatrix(context, CGAffineTransformIdentity);    
-    BPContextFlipVertical(context, rect);
+    CGContextSetStrokeColorWithColor(context, [[UIColor darkGrayColor] CGColor]);
+    CGContextStrokeRect(context, rect);
+
+    CGContextSetStrokeColorWithColor(context, [[UIColor blackColor] CGColor]);
+//    CGContextSetTextMatrix(context, CGAffineTransformIdentity);
+//    BPContextFlipVertical(context, rect);
     
-    CTFrameDraw(_textFrame, context);
+//    CTFrameDraw(_textFrame, context);
+  NSInteger i;
+  CFArrayRef lines = CTFrameGetLines(_textFrame);
+  CFIndex linesCount = CFArrayGetCount(lines);
+  CGPoint *origins = malloc(sizeof(CGPoint) * linesCount);
+
+  CTFrameGetLineOrigins(_textFrame, CFRangeMake(0, 0), origins);
+  for (i = 0; i < linesCount; i++) {
+    CTLineRef line = CFArrayGetValueAtIndex(lines, i);
+    CGPoint origin = origins[i];
+
+  //  CFRange rangeOfLine = CTLineGetStringRange(line);
+
+//    NSLog(@"origin %@, range {%d, %d} %@", NSStringFromCGPoint(origin), rangeOfLine.location, rangeOfLine.length,
+//          CFAttributedStringCreateWithSubstring(kCFAllocatorDefault,
+//                                                _textFrame,
+//                                                rangeOfLine));
+//        origin.y -= SwiffTextGetMaximumVerticalOffset(as, rangeOfLine);
+
+      //  CGContextSetTextPosition(context, origin.x, origin.y);
+//
+   // if(origin.y > 40000)
+     //   CTLineDraw(line, context);
+  }
+
+  free(origins);
+
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event

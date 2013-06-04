@@ -24,6 +24,7 @@
 #import "BPMarkdownPageView.h"
 #import "BPParser.h"
 #import "BPDisplaySettings.h"
+#import "BPFramesetPageView.h"
 
 /*
  * The standard margin of the UIKit views. This value was based on human inspection.
@@ -74,8 +75,12 @@ BPCreatePageFrames(CGSize pageSize, CGSize *suggestedContentSizeOut, CFAttribute
     
     CFRange textRange = {0, 0};
     CGFloat y = CGRectGetMinY(pageRect);
-    
-    while (y < suggestedSize.height) {
+
+    NSLog(@"pageRect %@", NSStringFromCGRect(pageRect));
+    CFIndex textLength = CFAttributedStringGetLength(attributedText);
+
+    while (textRange.location < textLength) {
+//      NSLog(@"%f", y);
         CGPathRef path = CGPathCreateWithRect(pageRect, &CGAffineTransformIdentity);
         CTFrameRef textFrame = CTFramesetterCreateFrame(framesetter, textRange, path, NULL);
         CGPathRelease(path);
@@ -84,12 +89,64 @@ BPCreatePageFrames(CGSize pageSize, CGSize *suggestedContentSizeOut, CFAttribute
         
         CFRange visibleRange = CTFrameGetVisibleStringRange(textFrame);
         textRange.location += visibleRange.length;
-        
-        y += CGRectGetHeight(pageRect);
+
+      //////////////
+
+
+      NSInteger i;
+      CFArrayRef lines = CTFrameGetLines(textFrame);
+      CFIndex linesCount = CFArrayGetCount(lines);
+      CGPoint *origins = malloc(sizeof(CGPoint) * linesCount);
+
+      CTFrameGetLineOrigins(textFrame, CFRangeMake(0, 0), origins);
+      for (i = 0; i < linesCount; i++) {
+        CTLineRef line = CFArrayGetValueAtIndex(lines, i);
+        CGPoint origin = origins[i];
+
+        CFRange rangeOfLine = CTLineGetStringRange(line);
+
+//        NSLog(@"origin %@, range {%d, %d} %@", NSStringFromCGPoint(origin), rangeOfLine.location, rangeOfLine.length,
+//              CFAttributedStringCreateWithSubstring(kCFAllocatorDefault,
+//                                                    attributedText,
+//                                                    rangeOfLine));
+//        origin.y -= SwiffTextGetMaximumVerticalOffset(as, rangeOfLine);
+
+//        CGContextSetTextPosition(context, origin.x, origin.y);
+//
+//        CTLineDraw(line, context);
+      }
+
+      free(origins);
+
+      ///////////////
     }
+    NSLog(@"textRange.location %d / %d", textRange.location, textLength);
+
+
+
     CFRelease(framesetter);
     return frames;
 }
+
+static CTFramesetterRef
+CreateFrameSetter(CGSize pageSize, CGSize *suggestedContentSizeOut, CFAttributedStringRef attributedText)
+{
+  CTFramesetterRef framesetter;
+  framesetter = CTFramesetterCreateWithAttributedString(attributedText);
+
+  CGRect pageRect = CGRectMake(0.f, 0.f, pageSize.width, pageSize.height);
+  CGSize constraints = CGSizeMake(CGRectGetWidth(pageRect), CGFLOAT_MAX);
+
+  CFRange fitRange;
+  CGSize suggestedSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter,
+                                                                      CFRangeMake(0, 0),
+          NULL,
+                                                                      constraints,
+                                                                      &fitRange);
+  *suggestedContentSizeOut = suggestedSize; // TODO:ContentSize is too small
+  return framesetter;
+}
+
 
 @interface BPMarkdownView () <BPMarkdownViewLinkDelegate, BPMarkdownPageViewLinkDelegate>
 @end
@@ -222,29 +279,36 @@ BPCreatePageFrames(CGSize pageSize, CGSize *suggestedContentSizeOut, CFAttribute
         }
 
         CGSize pageSize = CGSizeMake(CGRectGetWidth([self frame]) - (self.contentInset.left + self.contentInset.right),
-                                     CGRectGetHeight([self frame]));
+                                     100000);
+//                                     512);
+//                                     16384);
+                                  //          CGRectGetHeight([self frame]));
 
         CGSize contentSize;
-        CFArrayRef pageFrames = BPCreatePageFrames(pageSize, &contentSize, (__bridge CFAttributedStringRef) _attributedText);
+//        CFArrayRef pageFrames = BPCreatePageFrames(pageSize, &contentSize, (__bridge CFAttributedStringRef) _attributedText);
+      CTFramesetterRef framesetter = CreateFrameSetter(pageSize,
+                                                       &contentSize,
+                                                       (__bridge CFAttributedStringRef) _attributedText);
         contentSize.width = MIN(contentSize.width, pageSize.width);
+        pageSize.height = MIN(contentSize.height, pageSize.height);
 
       if ([self isAsynchronous]) {
             dispatch_sync(dispatch_get_main_queue(), ^{
-                [self createAndDisplayViewsFromPageFrames:pageFrames
+                [self createAndDisplayViewsFromFramesetter:framesetter
                                                  pageSize:pageSize
                                               contentSize:contentSize
                                                  duration:duration
                                                completion:completion];
             });
         } else {
-            [self createAndDisplayViewsFromPageFrames:pageFrames
+            [self createAndDisplayViewsFromFramesetter:framesetter
                                              pageSize:pageSize
                                           contentSize:contentSize
                                              duration:duration
                                            completion:completion];
         }
         
-        CFRelease(pageFrames);
+//        CFRelease(pageFrames);
     };
     
     if ([self isAsynchronous]) {
@@ -290,11 +354,13 @@ BPCreatePageFrames(CGSize pageSize, CGSize *suggestedContentSizeOut, CFAttribute
         } else {
             textViewFrame = CGRectOffset(pageRect, 0.f, i * CGRectGetHeight(pageRect));
         }
-        
-        BPMarkdownPageView *textView = [[BPMarkdownPageView alloc] initWithFrame:textViewFrame
+
+      BPMarkdownPageView *textView = [[BPMarkdownPageView alloc] initWithFrame:textViewFrame
                                                                        textFrame:textFrame];
 
-        CFRelease(textFrame); // the textView took ownership, and the retain would be 2 at this point
+      NSLog(@"textViewFrame %@", NSStringFromCGRect(textViewFrame));
+
+      CFRelease(textFrame); // the textView took ownership, and the retain would be 2 at this point
 
         [textView setTag:i + 1];
         [textView setAlpha:0.f];
@@ -317,6 +383,48 @@ BPCreatePageFrames(CGSize pageSize, CGSize *suggestedContentSizeOut, CFAttribute
         }
     } completion:completion];
 }
+
+
+- (void)createAndDisplayViewsFromFramesetter:(CTFramesetterRef)framesetter
+                                   pageSize:(CGSize)pageSize
+                                contentSize:(CGSize)contentSize
+                                   duration:(NSTimeInterval)duration
+                                 completion:(void (^)(BOOL finished))completion {
+  [self setContentSize:contentSize];
+
+  CGRect pageRect = CGRectZero;
+  pageRect.size = pageSize;
+
+      CGRect textViewFrame = CGRectMake(0.f,
+                                 0.f,
+                                 CGRectGetWidth(pageRect),
+                                 contentSize.height);
+
+  BPFramesetPageView *textView = [[BPFramesetPageView alloc] initWithFrame:textViewFrame
+                                                                   framesetter:framesetter];
+
+    NSLog(@"textViewFrame %@", NSStringFromCGRect(textViewFrame));
+
+    CFRelease(framesetter); // the textView took ownership, and the retain would be 2 at this point
+
+    [_pageViews addObject:textView];
+    [self addSubview:textView];
+
+    [textView setLinkDelegate:self];
+
+  // Schedule the fade in and fade out animations to occur at the same time
+
+  [UIView animateWithDuration:duration animations:^{
+    for (BPMarkdownPageView *pageView in _pageViews) {
+      [pageView setAlpha:1.f];
+    }
+
+    for (BPMarkdownPageView *previousPageView in _previousPageViews) {
+      [previousPageView setAlpha:0.f];
+    }
+  } completion:completion];
+}
+
 
 #pragma mark BPMarkdownViewLinkDelegate
 

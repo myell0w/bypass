@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		58D9D9CE16443243F8EE5384 /* BPFramesetPageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D9DA7756F6EB12E57BD45A /* BPFramesetPageView.m */; };
 		58D9DFA414A385A9337D153E /* BPDisplaySettings.m in Sources */ = {isa = PBXBuildFile; fileRef = 58D9DE2F0735C1CEB3500EFF /* BPDisplaySettings.m */; };
 		5E007AEB16FA17D200F8CFFD /* BPMarkdownView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E007AEA16FA17D100F8CFFD /* BPMarkdownView.m */; };
 		5E5BC81C16E004FA00165503 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5E5BC81B16E004FA00165503 /* Foundation.framework */; };
@@ -58,6 +59,8 @@
 
 /* Begin PBXFileReference section */
 		58D9D454C9F2BD2E7F81B4B8 /* BPDisplaySettings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BPDisplaySettings.h; sourceTree = "<group>"; };
+		58D9DA7756F6EB12E57BD45A /* BPFramesetPageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BPFramesetPageView.m; sourceTree = "<group>"; };
+		58D9DB30F3F0DD4333DFE933 /* BPFramesetPageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BPFramesetPageView.h; sourceTree = "<group>"; };
 		58D9DE2F0735C1CEB3500EFF /* BPDisplaySettings.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BPDisplaySettings.m; sourceTree = "<group>"; };
 		5E007AE916FA17D100F8CFFD /* BPMarkdownView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BPMarkdownView.h; sourceTree = "<group>"; };
 		5E007AEA16FA17D100F8CFFD /* BPMarkdownView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BPMarkdownView.m; sourceTree = "<group>"; };
@@ -247,6 +250,8 @@
 				5E007AEA16FA17D100F8CFFD /* BPMarkdownView.m */,
 				6BE4F72516F0E9D100670C16 /* BPMarkdownPageView.h */,
 				6BE4F72616F0E9D100670C16 /* BPMarkdownPageView.m */,
+				58D9DA7756F6EB12E57BD45A /* BPFramesetPageView.m */,
+				58D9DB30F3F0DD4333DFE933 /* BPFramesetPageView.h */,
 			);
 			name = View;
 			sourceTree = "<group>";
@@ -362,6 +367,7 @@
 				6BE4F72716F0E9D100670C16 /* BPMarkdownPageView.m in Sources */,
 				5E007AEB16FA17D200F8CFFD /* BPMarkdownView.m in Sources */,
 				58D9DFA414A385A9337D153E /* BPDisplaySettings.m in Sources */,
+				58D9D9CE16443243F8EE5384 /* BPFramesetPageView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
